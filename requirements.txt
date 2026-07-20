@@ -1,0 +1,44 @@
+# Core
+Django==5.2.16
+djangorestframework==3.17.1
+djangorestframework_simplejwt==5.5.1
+django-cors-headers==4.9.0
+django-environ==0.14.0
+Pillow==12.3.0
+
+# Google Calendar (service account)
+google-api-python-client==2.198.0
+google-auth==2.56.0
+google-auth-httplib2==0.4.0
+
+# Production database driver (Namecheap Stellar MySQL).
+# NOT installed in this local dev venv — local dev runs on SQLite (no
+# DATABASE_URL set). Per deployment.md: install this on the server FIRST,
+# in isolation, and confirm it builds cleanly before installing everything
+# else — mysqlclient needs a C compiler + MySQL client headers, and shared
+# hosting occasionally chokes on it. If it won't build, PyMySQL is the
+# documented fallback (see deployment.md).
+mysqlclient==2.2.4
+
+# --- transitive dependencies (pinned via pip freeze for reproducibility) ---
+asgiref==3.12.1
+certifi==2026.6.17
+cffi==2.1.0
+charset-normalizer==3.4.9
+cryptography==49.0.0
+google-api-core==2.32.0
+googleapis-common-protos==1.75.0
+httplib2==0.32.0
+idna==3.18
+proto-plus==1.28.1
+protobuf==7.35.1
+pyasn1==0.6.4
+pyasn1_modules==0.4.2
+pycparser==3.0
+PyJWT==2.13.0
+pyparsing==3.3.2
+requests==2.34.2
+sqlparse==0.5.5
+tzdata==2026.3
+uritemplate==4.2.0
+urllib3==2.7.0

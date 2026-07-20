@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+/venv/
+/env/
+.env*
+!.env.example
+staticfiles/
+media/
+*.log
+.DS_Store
+credentials/
+*-service-account.json

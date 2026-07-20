@@ -1,0 +1,25 @@
+# cPanel Git Version Control push-to-deploy config.
+#
+# Values filled in from the "Setup Python App" screen:
+#   cPanel username: sleegeaw
+#   Application root: api.sleektattoos.com
+#   Python version:   3.13
+#
+# What this does on every push (per deployment.md):
+#   1. Activates the cPanel-managed virtualenv for this app.
+#   2. Installs/updates dependencies from requirements.txt.
+#   3. Runs migrations against the live MySQL database.
+#   4. Collects static files (Django admin CSS/JS) into STATIC_ROOT.
+#   5. Touches tmp/restart.txt — the one step people forget. Passenger only
+#      reloads the app when this file's mtime changes; without it, the
+#      deploy "succeeds" but the old code keeps serving requests.
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/sleegeaw/api.sleektattoos.com/
+    - /bin/cp -R * $DEPLOYPATH
+    - source /home/sleegeaw/virtualenv/api.sleektattoos.com/3.13/bin/activate && cd $DEPLOYPATH && pip install -r requirements.txt
+    - source /home/sleegeaw/virtualenv/api.sleektattoos.com/3.13/bin/activate && cd $DEPLOYPATH && python manage.py migrate --noinput
+    - source /home/sleegeaw/virtualenv/api.sleektattoos.com/3.13/bin/activate && cd $DEPLOYPATH && python manage.py collectstatic --noinput
+    - /bin/mkdir -p $DEPLOYPATH/tmp
+    - /bin/touch $DEPLOYPATH/tmp/restart.txt
