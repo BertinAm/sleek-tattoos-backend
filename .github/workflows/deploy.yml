@@ -1,0 +1,50 @@
+name: Deploy to Stellar
+
+# Push-to-deploy: on every push to main, sanity-check the Django project
+# then SSH into the Stellar server and run the same steps .cpanel.yml runs
+# manually via cPanel's "Deploy HEAD Commit" button. .cpanel.yml stays as a
+# manual fallback (e.g. to redeploy without a new commit) — keep the two in
+# sync if you change the deployment steps.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Django system check (sanity gate — no real test suite yet, see todo.md)
+        run: python manage.py check
+        env:
+          # Only used for this check; never the real production key.
+          DJANGO_SECRET_KEY: ci-check-only-not-a-real-secret
+          DJANGO_DEBUG: 'True'
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STELLAR_SSH_HOST }}
+          port: ${{ secrets.STELLAR_SSH_PORT }}
+          username: ${{ secrets.STELLAR_SSH_USER }}
+          key: ${{ secrets.STELLAR_SSH_KEY }}
+          script: |
+            set -e
+            cd repositories/sleek-tattoos-backend
+            git pull origin main
+            cp -R * "$HOME/api.sleektattoos.com/"
+            source "$HOME/virtualenv/api.sleektattoos.com/3.13/bin/activate"
+            cd "$HOME/api.sleektattoos.com"
+            pip install -r requirements.txt
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput
+            mkdir -p tmp
+            touch tmp/restart.txt
