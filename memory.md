@@ -254,6 +254,103 @@ alongside it. Worth knowing if you're auditing this again later:
   `django-axes` on Django's built-in `/admin/` login, no dependency
   vulnerability scan of `requirements.txt`/`package.json` pins.
 
+## Production deployment gotchas (Namecheap Stellar + Cloudflare, 2026-07-20)
+
+First real deploy to production infrastructure — none of this was catchable
+locally, and most of it wasted real time before the actual cause was clear.
+Worth reading in full before touching DNS, cPanel, or the Cloudflare zone
+for this project again.
+
+- **cPanel Git Version Control can't clone a private repo over HTTPS
+  without a credential story.** Its git client runs non-interactively, so a
+  private GitHub remote fails with `fatal: could not read Username for
+  'https://github.com': No such device or address` — there's no terminal to
+  prompt for a login. cPanel also explicitly rejects credentials embedded in
+  the Clone URL ("The clone URL cannot include a password"). Since this repo
+  has zero secrets in it (everything sensitive is env-var-only — confirmed
+  by grepping the whole tree), the fix was simply making the repo public. If
+  a private repo is ever required instead, an SSH deploy key is the right
+  tool — not a URL-embedded token, which cPanel won't accept anyway.
+- **Never hardcode the cPanel username in anything committed to a public
+  repo.** `.cpanel.yml` originally baked the real username into every path
+  (`/home/<user>/...`). Once the repo went public that became a real (if
+  minor) information disclosure — a known-valid login identity for both
+  cPanel's web login and SSH on the live server. Fixed by switching every
+  path to `$HOME`, which the deployment shell resolves correctly at runtime
+  regardless of username. The GitHub Actions deploy workflow follows the
+  same rule — host/port/username all come from repo secrets, never
+  hardcoded in the committed YAML.
+- **`DATABASE_URL`'s password needs percent-encoding if it has special
+  characters.** django-environ parses `DATABASE_URL` as a URL; an unescaped
+  `}` in particular isn't valid in that position and can break parsing
+  outright or silently misread the credentials. Encode with
+  `urllib.parse.quote(password, safe='')` before building the connection
+  string — don't paste a raw generated password straight in.
+- **cPanel's "Environment variables" UI can silently corrupt values that
+  contain shell-special characters.** The first `DJANGO_SECRET_KEY` used
+  Django's default character set (`#`, `&`, `$`, `%`, `^`, `!` included) and
+  came through as a completely empty string in production —
+  `manage.py check` failed with `ImproperlyConfigured: The SECRET_KEY
+  setting must not be empty`, despite the field visibly having a value.
+  Never confirmed the exact mechanism (cPanel likely sources these through
+  something shell-like without proper quoting — an unquoted `#` alone would
+  truncate everything after it as a comment), but the fix was simple:
+  regenerate using only alphanumeric characters. Cheap insurance going
+  forward: avoid punctuation entirely in any secret that has to survive a
+  hosting panel's own env-var storage, not just this one value.
+- **cPanel's Git deploy log doesn't reliably surface in every cPanel
+  theme/version.** Couldn't find a persistent "last deployment output" view
+  in this account's Jupiter theme. The reliable fallback: "Setup Python
+  App"'s own "Configuration files → Run Pip Install" and "Execute python
+  script" fields run live and print real output/tracebacks directly in the
+  browser — that's exactly what surfaced the SECRET_KEY bug above. Don't
+  waste time hunting for a deploy log that may not be exposed; this gives
+  you the same information more directly anyway.
+- **A subdomain "existing" in cPanel's Python App dropdown does not mean
+  DNS resolves it.** Cloudflare is the DNS host for the whole domain,
+  entirely separate from cPanel's own vhost config — cPanel will happily let
+  you create a Python App bound to `api.sleektattoos.com` with zero public
+  DNS record pointing anywhere. Always add the actual DNS record (A record
+  → origin IP) as its own explicit, separately-verified step; don't assume
+  it exists just because a hosting panel offers the hostname as an option.
+- **Cloudflare Worker "Routes" using a wildcard pattern (e.g.
+  `*.sleektattoos.com/*`) apply to *any* proxied hostname on the zone, not
+  just the ones you meant** — this produced two separate, confusing
+  symptoms that share one root cause:
+  1. `api.sleektattoos.com` (the Django backend's subdomain, freshly added
+     to DNS as **Proxied**) returned the *frontend's* custom 404 page
+     instead of ever reaching Stellar. A wildcard Route matches every
+     subdomain — including one just added for a completely unrelated
+     server — and Worker routing wins over whatever IP the A record
+     actually points at, as long as the record is proxied. Fixed by
+     setting that record to **DNS only** (grey cloud in Cloudflare's DNS
+     panel), which bypasses the proxy/Worker layer entirely and goes
+     straight to the origin IP. Anything not meant to be served by the
+     frontend Worker should default to DNS-only.
+  2. The bare root domain `sleektattoos.com` kept showing Namecheap's
+     default "hosting account ready" placeholder instead of the actual
+     frontend. Root cause was almost the opposite problem: a `*.` route
+     pattern only matches *subdomains*, never the bare root domain — so
+     despite the zone showing "Active" in Cloudflare, the root domain was
+     never actually bound to the Worker at all. It also still had a stale
+     A record (auto-imported from Namecheap's original DNS when the zone
+     was first added to Cloudflare) pointing directly at the Stellar
+     server's IP, which has no real content at that hostname — hence the
+     generic hosting-provider placeholder. Fixed by deleting that stale A
+     record, then adding `sleektattoos.com` and `www.sleektattoos.com` as
+     explicit **Custom Domains** on the Worker (Workers & Pages → the
+     Worker → Domains → Add Domain) — Custom Domains bind one exact
+     hostname to a Worker and manage that hostname's DNS record
+     automatically, unlike a Route pattern.
+
+  **Fix for both, together**: once explicit Custom Domains exist for every
+  hostname that should reach the frontend, delete the broad
+  `*.sleektattoos.com/*` Route entirely. Custom Domains (exact match) are
+  the right tool for a zone that also hosts unrelated services on other
+  subdomains (like this project's API) — a wildcard Route has no way to
+  know which subdomains it should leave alone, and will keep silently
+  capturing whatever's added next unless it's removed.
+
 ## How to verify the backend still works after changes
 
 This is exactly the sequence used to build confidence in the original
