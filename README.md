@@ -38,13 +38,6 @@ API is served at `http://localhost:8000/api/`, Django admin at `http://localhost
 
 Every app that mutates data has a `signals.py` that writes an `ActivityLog` row on save/delete — fires whether the change came through the API or Django's own `/admin/` site, so the Activity Logs page is always complete.
 
-## Read next
+## More detailed docs
 
-This repo has four docs, each answering a different question:
-
-- **[implementation.md](implementation.md)** — the *what*: full endpoint reference, auth model, app map.
-- **[deployment.md](deployment.md)** — the *how to ship it*: Namecheap Stellar (cPanel) setup, MySQL, `.cpanel.yml` push-to-deploy, Google Calendar service account, Cloudflare Pages frontend config.
-- **[todo.md](todo.md)** — the *what's left*: real remaining work, gaps worth closing before/after launch, explicitly out-of-scope items.
-- **[memory.md](memory.md)** — the *why*: reasoning behind non-obvious decisions, things that surprised us while building it, a security-hardening pass, how to verify the backend still works after a change.
-
-Read `memory.md` before making non-trivial changes — it's the fastest way to avoid re-deriving (or accidentally reversing) decisions that aren't obvious from the code alone.
+Deeper architecture notes, deployment steps, and internal planning docs are kept locally (`implementation.md`, `deployment.md`, `todo.md`, `memory.md`) rather than published in this public repo. Ask a maintainer if you need access.

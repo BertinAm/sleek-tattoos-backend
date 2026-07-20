@@ -11,3 +11,10 @@ media/
 .DS_Store
 credentials/
 *-service-account.json
+
+# Internal docs — architecture detail, known gaps, deployment specifics.
+# Kept locally for development; not published now that this repo is public.
+implementation.md
+deployment.md
+todo.md
+memory.md
