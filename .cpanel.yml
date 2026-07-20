@@ -1,9 +1,11 @@
 # cPanel Git Version Control push-to-deploy config.
 #
 # Values filled in from the "Setup Python App" screen:
-#   cPanel username: sleegeaw
 #   Application root: api.sleektattoos.com
 #   Python version:   3.13
+# ($HOME resolves to the cPanel account's home directory at deploy time —
+# deliberately not hardcoded here, since this file is committed to a public
+# repo and the cPanel username shouldn't be.)
 #
 # What this does on every push (per deployment.md):
 #   1. Activates the cPanel-managed virtualenv for this app.
@@ -16,10 +18,10 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/sleegeaw/api.sleektattoos.com/
+    - export DEPLOYPATH=$HOME/api.sleektattoos.com/
     - /bin/cp -R * $DEPLOYPATH
-    - source /home/sleegeaw/virtualenv/api.sleektattoos.com/3.13/bin/activate && cd $DEPLOYPATH && pip install -r requirements.txt
-    - source /home/sleegeaw/virtualenv/api.sleektattoos.com/3.13/bin/activate && cd $DEPLOYPATH && python manage.py migrate --noinput
-    - source /home/sleegeaw/virtualenv/api.sleektattoos.com/3.13/bin/activate && cd $DEPLOYPATH && python manage.py collectstatic --noinput
+    - source $HOME/virtualenv/api.sleektattoos.com/3.13/bin/activate && cd $DEPLOYPATH && pip install -r requirements.txt
+    - source $HOME/virtualenv/api.sleektattoos.com/3.13/bin/activate && cd $DEPLOYPATH && python manage.py migrate --noinput
+    - source $HOME/virtualenv/api.sleektattoos.com/3.13/bin/activate && cd $DEPLOYPATH && python manage.py collectstatic --noinput
     - /bin/mkdir -p $DEPLOYPATH/tmp
     - /bin/touch $DEPLOYPATH/tmp/restart.txt
