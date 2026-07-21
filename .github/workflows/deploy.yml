@@ -36,6 +36,7 @@ jobs:
           port: ${{ secrets.STELLAR_SSH_PORT }}
           username: ${{ secrets.STELLAR_SSH_USER }}
           key: ${{ secrets.STELLAR_SSH_KEY }}
+          passphrase: ${{ secrets.STELLAR_SSH_PASSPHRASE }}
           script: |
             set -e
             cd repositories/sleek-tattoos-backend
