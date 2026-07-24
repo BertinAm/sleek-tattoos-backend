@@ -15,6 +15,7 @@ class ActivityLog(models.Model):
         ('booking', 'Booking'),
         ('support', 'Support'),
         ('contact', 'Contact'),
+        ('newsletter', 'Newsletter'),
         ('auth', 'Auth'),
     ]
 

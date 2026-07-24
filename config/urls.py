@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/', include('bookings.urls')),
     path('api/', include('contacts.urls')),
     path('api/', include('support.urls')),
+    path('api/', include('newsletter.urls')),
 ]
 
 if settings.DEBUG:
