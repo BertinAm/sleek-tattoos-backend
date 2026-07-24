@@ -1,5 +1,5 @@
 {% extends "emails/base.html" %}
-{% block title %}New booking request — {{ booking.name }}{% endblock %}
+{% block title %}New booking request: {{ booking.name }}{% endblock %}
 {% block preheader %}New booking request from {{ booking.name }} for {{ booking.preferred_date }}{% endblock %}
 {% block content %}
 <div style="font-family:'Courier New', Courier, monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#C9A322; margin:0 0 12px;">&middot; New Booking Request</div>

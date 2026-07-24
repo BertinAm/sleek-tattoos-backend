@@ -1,7 +1,7 @@
 """
 Outbound email via the studio's two real Namecheap-hosted mailboxes (SMTP,
 cPanel mail on sleektattoos.com). Two separate sending identities, matching
-two separate real mailboxes on the server — not just two different "From"
+two separate real mailboxes on the server, not just two different "From"
 headers off one connection. SMTP requires authenticating as a real mailbox;
 sending "From: noreply@..." while authenticated as hello@ would misalign
 with SPF/DKIM checks on receiving servers and risks landing in spam, so
@@ -41,7 +41,7 @@ def _send(subject, text_body, html_body, from_email, username, password, reply_t
             use_ssl=settings.EMAIL_USE_SSL,
             use_tls=settings.EMAIL_USE_TLS,
             # Without this, a blocked/unreachable SMTP port hangs forever
-            # instead of failing — smtplib's default socket timeout is None
+            # instead of failing: smtplib's default socket timeout is None
             # (no timeout at all). 15s is generous for a same-host SMTP
             # handshake; if it can't connect by then, it's not going to.
             timeout=15,
@@ -62,7 +62,7 @@ def _send(subject, text_body, html_body, from_email, username, password, reply_t
 def send_booking_notification(booking) -> str | None:
     """Notifies the studio of a new booking request, from hello@. Reply-To
     is set to the customer's own email so replying goes straight to them."""
-    subject = f'New booking request — {booking.name}'
+    subject = f'New booking request: {booking.name}'
     rows = [
         ('Name', booking.name),
         ('Gender', booking.gender or '-'),
