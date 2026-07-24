@@ -28,7 +28,10 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-def _send(subject, text_body, html_body, from_email, username, password, reply_to=None) -> str | None:
+def _send(subject, text_body, html_body, from_email, username, password, reply_to=None, to=None) -> str | None:
+    """`to` defaults to the studio's own inbox (every email until now only
+    ever went there) — pass it explicitly to email an actual end user
+    (a contact-form submitter, a newsletter subscriber)."""
     if not password:
         return f'No password configured for {username} (EMAIL env vars not set).'
     try:
@@ -48,7 +51,7 @@ def _send(subject, text_body, html_body, from_email, username, password, reply_t
         )
         message = EmailMultiAlternatives(
             subject=subject, body=text_body, from_email=from_email,
-            to=[settings.STUDIO_NOTIFICATION_EMAIL], connection=connection,
+            to=to or [settings.STUDIO_NOTIFICATION_EMAIL], connection=connection,
             reply_to=[reply_to] if reply_to else None,
         )
         message.attach_alternative(html_body, 'text/html')
@@ -86,6 +89,38 @@ def send_booking_notification(booking) -> str | None:
         subject, text_body, html_body, settings.EMAIL_HOST_USER,
         settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD,
         reply_to=booking.email,
+    )
+
+
+def send_contact_notification(contact) -> str | None:
+    """Notifies the studio of a new contact-form submission, from hello@.
+    Reply-To is the customer's own email, mirroring send_booking_notification."""
+    subject = f'New contact form submission: {contact.name}'
+    text_body = (
+        f'Name: {contact.name}\n'
+        f'Email: {contact.email}\n'
+        f'Phone: {contact.phone or "-"}\n\n'
+        f'Message:\n{contact.message}\n\n'
+        f'Reply from the admin panel to respond directly.'
+    )
+    html_body = render_to_string('emails/contact_notification.html', {'contact': contact})
+    return _send(
+        subject, text_body, html_body, settings.EMAIL_HOST_USER,
+        settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD,
+        reply_to=contact.email,
+    )
+
+
+def send_contact_reply(contact, reply_text) -> str | None:
+    """Sends the admin's reply to whoever submitted the contact form, from
+    hello@ — the address customers already know to reply to."""
+    subject = f'Re: your message to Sleek Tattoos'
+    text_body = f'{reply_text}\n\n---\nYour original message:\n{contact.message}'
+    html_body = render_to_string('emails/contact_reply.html', {'contact': contact, 'reply_text': reply_text})
+    return _send(
+        subject, text_body, html_body, settings.EMAIL_HOST_USER,
+        settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD,
+        to=[contact.email],
     )
 
 

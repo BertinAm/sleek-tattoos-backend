@@ -8,6 +8,12 @@ class ContactSubmission(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Set together, only via ContactSubmissionViewSet.reply — the message
+    # itself stays immutable (see the ViewSet's docstring), this just tracks
+    # whether/how staff responded.
+    replied_at = models.DateTimeField(null=True, blank=True)
+    reply_text = models.TextField(blank=True)
+
     class Meta:
         ordering = ['-created_at']
 

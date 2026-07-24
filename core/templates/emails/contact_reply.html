@@ -1,0 +1,17 @@
+{% extends "emails/base.html" %}
+{% block title %}A reply from Sleek Tattoos{% endblock %}
+{% block preheader %}We've replied to your message{% endblock %}
+{% block footer_note %}This is a real inbox. Reply to this email any time.{% endblock %}
+{% block content %}
+<div style="font-family:'Courier New', Courier, monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#C9A322; margin:0 0 12px;">&middot; A Reply From Sleek Tattoos</div>
+<h1 style="font-family:Georgia, 'Times New Roman', serif; font-weight:400; font-size:22px; color:#20241f; margin:0 0 20px;">Hi {{ contact.name }},</h1>
+
+<div style="font-family:Arial, Helvetica, sans-serif; font-size:15px; color:#3c4038; line-height:1.65; white-space:pre-wrap; margin:0 0 28px;">{{ reply_text }}</div>
+
+<div style="border-left:3px solid #EAE0C8; padding:2px 0 2px 16px; margin-bottom:24px;">
+  <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:0.5px; text-transform:uppercase; color:#7a7a72; margin-bottom:6px;">Your original message</div>
+  <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; color:#7a7a72; line-height:1.55; white-space:pre-wrap;">{{ contact.message }}</div>
+</div>
+
+<a href="https://sleektattoos.com/booking" style="display:inline-block; background-color:#E8C130; color:#001c11; font-family:Arial, Helvetica, sans-serif; font-weight:bold; font-size:14px; text-decoration:none; padding:13px 26px; border-radius:999px;">Book a Consultation</a>
+{% endblock %}

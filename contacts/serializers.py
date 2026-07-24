@@ -10,5 +10,9 @@ class ContactSubmissionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContactSubmission
-        fields = ['id', 'name', 'email', 'phone', 'message', 'created_at']
-        read_only_fields = ['created_at']
+        fields = ['id', 'name', 'email', 'phone', 'message', 'created_at', 'replied_at', 'reply_text']
+        read_only_fields = ['created_at', 'replied_at', 'reply_text']
+
+
+class ContactReplySerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=5000)
