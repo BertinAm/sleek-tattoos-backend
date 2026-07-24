@@ -1,0 +1,46 @@
+{% comment %}
+Shared email shell — dark espresso header (matches the site's --espresso-900
+hero sections), light content card, footer. Table-based layout with fully
+inline styles throughout, since email clients don't reliably support
+external/embedded stylesheets, flexbox, grid, or CSS variables. Georgia is
+used for headings because it's the actual first choice in the site's own
+--font-display stack (Georgia, 'Times New Roman', serif) — one of the few
+fonts that survives translation into email unchanged.
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>{% block title %}Sleek Tattoos{% endblock %}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F3ECDC;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">{% block preheader %}{% endblock %}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F3ECDC;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background-color:#FDFBF6; border-radius:16px; overflow:hidden; border:1px solid rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background-color:#001c11; padding:28px 32px; text-align:center;">
+              <img src="https://sleektattoos.com/assets/logo.jpg" width="44" height="44" alt="Sleek Tattoos" style="border-radius:50%; display:block; margin:0 auto 10px;">
+              <div style="font-family:'Courier New', Courier, monospace; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:#F3DB86;">Sleek Tattoos</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              {% block content %}{% endblock %}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 32px 24px; border-top:1px solid #EAE0C8; text-align:center;">
+              <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:12px; color:#7a7a72;">Sleek Tattoos &middot; Law Gate, Phagwara (Jalandhar), Punjab</p>
+              <p style="margin:6px 0 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; color:#7a7a72;">Automated notification from sleektattoos.com — no reply needed here.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

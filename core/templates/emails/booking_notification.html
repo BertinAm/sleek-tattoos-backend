@@ -1,0 +1,25 @@
+{% extends "emails/base.html" %}
+{% block title %}New booking request — {{ booking.name }}{% endblock %}
+{% block preheader %}New booking request from {{ booking.name }} for {{ booking.preferred_date }}{% endblock %}
+{% block content %}
+<div style="font-family:'Courier New', Courier, monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#C9A322; margin:0 0 12px;">&middot; New Booking Request</div>
+<h1 style="font-family:Georgia, 'Times New Roman', serif; font-weight:400; font-size:24px; color:#20241f; margin:0 0 20px;">{{ booking.name }}</h1>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+  {% for label, value in rows %}
+  <tr>
+    <td style="padding:9px 0; border-bottom:1px solid #EAE0C8; font-family:Arial, Helvetica, sans-serif; font-size:12px; letter-spacing:0.5px; text-transform:uppercase; color:#7a7a72; width:38%; vertical-align:top;">{{ label }}</td>
+    <td style="padding:9px 0; border-bottom:1px solid #EAE0C8; font-family:Arial, Helvetica, sans-serif; font-size:14px; color:#20241f; vertical-align:top;">{{ value }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% if booking.notes %}
+<div style="background-color:#F3ECDC; border-radius:10px; padding:14px 16px; margin-bottom:24px;">
+  <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:0.5px; text-transform:uppercase; color:#7a7a72; margin-bottom:6px;">Notes</div>
+  <div style="font-family:Arial, Helvetica, sans-serif; font-size:14px; color:#20241f; line-height:1.55;">{{ booking.notes }}</div>
+</div>
+{% endif %}
+
+<a href="https://sleektattoos.com/admin/bookings" style="display:inline-block; background-color:#E8C130; color:#001c11; font-family:Arial, Helvetica, sans-serif; font-weight:bold; font-size:14px; text-decoration:none; padding:13px 26px; border-radius:999px;">View in Admin Panel</a>
+{% endblock %}

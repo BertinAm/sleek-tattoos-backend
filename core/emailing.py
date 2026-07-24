@@ -11,7 +11,9 @@ each purpose gets its own connection with its own credentials:
 - noreply@sleektattoos.com -> system notifications, e.g. admin login alerts
   (core/views.py)
 
-Both are "best effort", matching bookings/services/google_calendar.py's
+Every email is sent as HTML (templates in core/templates/emails/, styled to
+match the site) with a plain-text fallback for clients that don't render
+HTML. Both are "best effort", matching bookings/services/google_calendar.py's
 philosophy: every function here swallows its own exceptions and returns an
 error string (or None on success) rather than raising. An email provider
 hiccup must never block a booking from saving or an admin from logging in.
@@ -19,12 +21,14 @@ hiccup must never block a booking from saving or an admin from logging in.
 import logging
 
 from django.conf import settings
-from django.core.mail import EmailMessage, get_connection
+from django.core.mail import EmailMultiAlternatives, get_connection
+from django.template.loader import render_to_string
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
 
-def _send(subject, body, from_email, username, password, reply_to=None) -> str | None:
+def _send(subject, text_body, html_body, from_email, username, password, reply_to=None) -> str | None:
     if not password:
         return f'No password configured for {username} (EMAIL env vars not set).'
     try:
@@ -42,11 +46,12 @@ def _send(subject, body, from_email, username, password, reply_to=None) -> str |
             # handshake; if it can't connect by then, it's not going to.
             timeout=15,
         )
-        message = EmailMessage(
-            subject=subject, body=body, from_email=from_email,
+        message = EmailMultiAlternatives(
+            subject=subject, body=text_body, from_email=from_email,
             to=[settings.STUDIO_NOTIFICATION_EMAIL], connection=connection,
             reply_to=[reply_to] if reply_to else None,
         )
+        message.attach_alternative(html_body, 'text/html')
         message.send(fail_silently=False)
         return None
     except Exception as exc:
@@ -58,22 +63,27 @@ def send_booking_notification(booking) -> str | None:
     """Notifies the studio of a new booking request, from hello@. Reply-To
     is set to the customer's own email so replying goes straight to them."""
     subject = f'New booking request — {booking.name}'
-    body = (
-        f'Name: {booking.name}\n'
-        f'Gender: {booking.gender or "-"}\n'
-        f'Email: {booking.email}\n'
-        f'Phone: {booking.country_code} {booking.phone}\n'
-        f'Appointment type: {booking.appointment_type}\n'
-        f'Party size: {booking.party_size}\n'
-        f'Location: {booking.location}\n'
-        f'Preferred date/time: {booking.preferred_date} {booking.preferred_time}\n'
-        f'Travel fee: Rs. {booking.travel_fee}\n'
-        f'Notes: {booking.notes or "-"}\n'
-        f'Reference images: {len(booking.reference_images)} attached\n\n'
-        f'View in the admin panel to update status.'
-    )
+    rows = [
+        ('Name', booking.name),
+        ('Gender', booking.gender or '-'),
+        ('Email', booking.email),
+        ('Phone', f'{booking.country_code} {booking.phone}'),
+        ('Appointment type', booking.appointment_type),
+        ('Party size', booking.party_size),
+        ('Location', booking.location),
+        ('Preferred date/time', f'{booking.preferred_date} {booking.preferred_time}'),
+        ('Travel fee', f'Rs. {booking.travel_fee}'),
+        ('Reference images', f'{len(booking.reference_images)} attached'),
+    ]
+    text_body = '\n'.join(f'{label}: {value}' for label, value in rows)
+    if booking.notes:
+        text_body += f'\n\nNotes: {booking.notes}'
+    text_body += '\n\nView in the admin panel to update status.'
+
+    html_body = render_to_string('emails/booking_notification.html', {'booking': booking, 'rows': rows})
+
     return _send(
-        subject, body, settings.EMAIL_HOST_USER,
+        subject, text_body, html_body, settings.EMAIL_HOST_USER,
         settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD,
         reply_to=booking.email,
     )
@@ -82,10 +92,17 @@ def send_booking_notification(booking) -> str | None:
 def send_admin_login_notification(username, ip_address=None) -> str | None:
     """Notifies the studio someone logged into the admin panel, from noreply@."""
     subject = f'Admin login: {username}'
-    body = f'{username} just logged into the Sleek Tattoos admin panel.'
+    ts = timezone.now().strftime('%d %b %Y, %I:%M %p %Z').strip()
+
+    text_body = f'{username} just logged into the Sleek Tattoos admin panel.\nTime: {ts}'
     if ip_address:
-        body += f'\nIP address: {ip_address}'
+        text_body += f'\nIP address: {ip_address}'
+
+    html_body = render_to_string('emails/admin_login_notification.html', {
+        'username': username, 'ip_address': ip_address, 'timestamp': ts,
+    })
+
     return _send(
-        subject, body, settings.NOREPLY_EMAIL_HOST_USER,
+        subject, text_body, html_body, settings.NOREPLY_EMAIL_HOST_USER,
         settings.NOREPLY_EMAIL_HOST_USER, settings.NOREPLY_EMAIL_HOST_PASSWORD,
     )
