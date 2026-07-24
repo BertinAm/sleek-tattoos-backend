@@ -185,6 +185,30 @@ CORS_ALLOW_HEADERS = list(default_headers) + ['x-visitor-token']
 GOOGLE_SERVICE_ACCOUNT_FILE = env('GOOGLE_SERVICE_ACCOUNT_FILE', default='')
 GOOGLE_CALENDAR_OWNER_EMAIL = env('GOOGLE_CALENDAR_OWNER_EMAIL', default='')
 
+# --- Email (Namecheap-hosted mailboxes, cPanel mail) --------------------------
+# Two separate real mailboxes, two separate purposes — see core/emailing.py for
+# why this isn't just one connection with a spoofed "From" header:
+#   hello@sleektattoos.com   -> booking notifications
+#   noreply@sleektattoos.com -> system notifications (admin login alerts)
+# Same host/port for both (same domain, same mail server). Port 465 is
+# implicit SSL, not STARTTLS, hence USE_SSL not USE_TLS (Django errors if
+# both are set).
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST', default='sleektattoos.com')
+EMAIL_PORT = env.int('EMAIL_PORT', default=465)
+EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=True)
+EMAIL_USE_TLS = False
+
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='hello@sleektattoos.com')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+NOREPLY_EMAIL_HOST_USER = env('NOREPLY_EMAIL_HOST_USER', default='noreply@sleektattoos.com')
+NOREPLY_EMAIL_HOST_PASSWORD = env('NOREPLY_EMAIL_HOST_PASSWORD', default='')
+
+# Where booking and admin-login notification emails actually get sent.
+STUDIO_NOTIFICATION_EMAIL = env('STUDIO_NOTIFICATION_EMAIL', default='sleektattoos00@gmail.com')
+
 AUTH_USER_MODEL = 'auth.User'
 
 # --- Production security hardening -------------------------------------------

@@ -1,3 +1,5 @@
+import logging
+
 from django.core.files.storage import default_storage
 from django.http import HttpResponse
 from rest_framework import generics, status
@@ -8,9 +10,12 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from .emailing import send_admin_login_notification
 from .models import ActivityLog, add_log
 from .permissions import IsStaffOnly
 from .serializers import ActivityLogSerializer, ImageUploadSerializer, UserSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class LoginView(TokenObtainPairView):
@@ -28,7 +33,14 @@ class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         if response.status_code == 200:
-            add_log('auth', f'Admin logged in ({request.data.get("username", "")})')
+            username = request.data.get('username', '')
+            add_log('auth', f'Admin logged in ({username})')
+            try:
+                error = send_admin_login_notification(username, request.META.get('REMOTE_ADDR'))
+                if error:
+                    logger.warning('Admin login notification email failed: %s', error)
+            except Exception:  # emailing.py already catches internally; this is a last-resort net
+                logger.exception('Admin login notification email failed unexpectedly')
         return response
 
 

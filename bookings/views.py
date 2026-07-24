@@ -1,13 +1,18 @@
+import logging
+
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
+from core.emailing import send_booking_notification
 from core.permissions import IsStaffOnly, IsStaffOrReadOnly
 from .models import Booking, Location
 from .serializers import BookingSerializer, BookingStatusSerializer, LocationSerializer
 from .services.google_calendar import create_booking_event, delete_booking_event
+
+logger = logging.getLogger(__name__)
 
 
 class LocationViewSet(viewsets.ModelViewSet):
@@ -65,6 +70,13 @@ class BookingViewSet(viewsets.ModelViewSet):
             update_fields.append('calendar_sync_error')
         if update_fields:
             booking.save(update_fields=update_fields)
+
+        try:
+            email_error = send_booking_notification(booking)
+            if email_error:
+                logger.warning('Booking notification email failed for booking %s: %s', booking.pk, email_error)
+        except Exception:  # emailing.py already catches internally; this is a last-resort net
+            logger.exception('Booking notification email failed unexpectedly for booking %s', booking.pk)
 
     def perform_destroy(self, instance):
         if instance.google_calendar_event_id:
