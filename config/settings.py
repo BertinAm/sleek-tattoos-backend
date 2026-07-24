@@ -190,13 +190,21 @@ GOOGLE_CALENDAR_OWNER_EMAIL = env('GOOGLE_CALENDAR_OWNER_EMAIL', default='')
 # why this isn't just one connection with a spoofed "From" header:
 #   hello@sleektattoos.com   -> booking notifications
 #   noreply@sleektattoos.com -> system notifications (admin login alerts)
-# Same host/port for both (same domain, same mail server). Port 465 is
-# implicit SSL, not STARTTLS, hence USE_SSL not USE_TLS (Django errors if
-# both are set).
+#
+# Host/port default to LOCAL submission (localhost:25), not the public
+# sleektattoos.com:465 the mailboxes' own "Connect Devices" page advertises.
+# Confirmed on Stellar: outbound connections to remote SMTP ports from the
+# Python App process are firewalled — every attempt to sleektattoos.com:465
+# failed instantly with `OSError: [Errno 101] Network is unreachable` (a
+# routing-level rejection, not a slow/flaky connection or bad credentials).
+# localhost:25 stays entirely inside the machine and reaches cPanel's local
+# Exim MTA directly — confirmed working via manage.py test_email. See
+# memory.md for the full writeup. Don't "fix" this back to the public
+# hostname/port without re-testing — it'll silently start failing again.
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env('EMAIL_HOST', default='sleektattoos.com')
-EMAIL_PORT = env.int('EMAIL_PORT', default=465)
-EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=True)
+EMAIL_HOST = env('EMAIL_HOST', default='localhost')
+EMAIL_PORT = env.int('EMAIL_PORT', default=25)
+EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
 EMAIL_USE_TLS = False
 
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='hello@sleektattoos.com')
