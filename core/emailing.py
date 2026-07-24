@@ -36,6 +36,11 @@ def _send(subject, body, from_email, username, password, reply_to=None) -> str |
             password=password,
             use_ssl=settings.EMAIL_USE_SSL,
             use_tls=settings.EMAIL_USE_TLS,
+            # Without this, a blocked/unreachable SMTP port hangs forever
+            # instead of failing — smtplib's default socket timeout is None
+            # (no timeout at all). 15s is generous for a same-host SMTP
+            # handshake; if it can't connect by then, it's not going to.
+            timeout=15,
         )
         message = EmailMessage(
             subject=subject, body=body, from_email=from_email,
